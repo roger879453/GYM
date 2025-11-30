@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>LiftFlow PRO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide-react@0.294.0/dist/lucide-react.umd.js"></script>
+    <style>
+      body { background-color: #020617; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+      @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+      @keyframes bounce-subtle { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -5px); } }
+      .animate-bounce-subtle { animation: bounce-subtle 2s infinite; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel" data-presets="react,typescript">
+        const { useState, useEffect, useRef, useMemo } = React;
+        const { Dumbbell, Calendar, Calculator, User, Plus, Minus, Clock, Check, ChevronRight, ChevronLeft, History, Trophy, Flame, Settings, BarChart3, MessageSquare, Camera, Upload, Zap, BookOpen, X, Send, Disc, Activity, Trash2, RefreshCw, ArrowRight, Edit2, Target } = lucideReact;
+
+        // Constants
+        const EXERCISE_DB = [
+          { id: 'bench_press', name: '槓鈴臥推', part: '胸部', type: 'Compound', tips: '肩胛骨後收下沈，手肘與身體呈 45-75 度。', iconColor: 'bg-blue-500' },
+          { id: 'db_bench_press', name: '啞鈴臥推', part: '胸部', type: 'Compound', tips: '增加活動範圍，感受胸大肌拉伸。', iconColor: 'bg-blue-400' },
+          { id: 'incline_bench', name: '上斜槓鈴臥推', part: '胸部', type: 'Compound', tips: '針對上胸，椅背約 30-45 度。', iconColor: 'bg-blue-600' },
+          { id: 'db_incline', name: '上斜啞鈴臥推', part: '胸部', type: 'Isolation', tips: '專注上胸收縮，離心下放慢。', iconColor: 'bg-indigo-500' },
+          { id: 'cable_fly', name: '滑輪夾胸', part: '胸部', type: 'Isolation', tips: '想像要環抱一棵大樹。', iconColor: 'bg-cyan-500' },
+          { id: 'pec_deck', name: '蝴蝶機夾胸', part: '胸部', type: 'Machine', tips: '專注胸肌內側擠壓。', iconColor: 'bg-cyan-600' },
+          { id: 'deadlift', name: '傳統硬舉', part: '背部', type: 'Compound', tips: '槓鈴貼近小腿，臀部夾緊。', iconColor: 'bg-yellow-500' },
+          { id: 'pull_up', name: '引體向上', part: '背部', type: 'Bodyweight', tips: '啟動時先下壓肩胛骨。', iconColor: 'bg-amber-500' },
+          { id: 'lat_pull', name: '滑輪下拉', part: '背部', type: 'Cable', tips: '手肘下拉至腰際。', iconColor: 'bg-purple-500' },
+          { id: 'seated_row', name: '坐姿划船', part: '背部', type: 'Cable', tips: '將把手拉向肚臍，挺胸。', iconColor: 'bg-violet-500' },
+          { id: 'squat', name: '槓鈴深蹲', part: '腿部', type: 'Compound', tips: '膝蓋對準腳尖方向。', iconColor: 'bg-red-500' },
+          { id: 'leg_press', name: '腿推舉', part: '腿部', type: 'Machine', tips: '不要鎖死膝蓋。', iconColor: 'bg-red-400' },
+          { id: 'rdl', name: '羅馬尼亞硬舉', part: '腿部', type: 'Compound', tips: '屁股向後推，感受腿後拉伸。', iconColor: 'bg-yellow-700' },
+          { id: 'leg_extension', name: '坐姿腿屈伸', part: '腿部', type: 'Isolation', tips: '針對股四頭肌，頂端停留。', iconColor: 'bg-red-600' },
+          { id: 'leg_curl', name: '俯臥腿後勾', part: '腿部', type: 'Isolation', tips: '勾起時不要用腰借力。', iconColor: 'bg-rose-500' },
+          { id: 'ohp', name: '站姿肩推', part: '肩膀', type: 'Compound', tips: '核心收緊，槓鈴垂直向上。', iconColor: 'bg-orange-500' },
+          { id: 'db_shoulder_press', name: '坐姿啞鈴肩推', part: '肩膀', type: 'Compound', tips: '推至頭頂上方。', iconColor: 'bg-orange-300' },
+          { id: 'lateral_raise', name: '啞鈴側平舉', part: '肩膀', type: 'Isolation', tips: '手肘微彎，像倒水一樣舉起。', iconColor: 'bg-orange-400' },
+          { id: 'face_pull', name: '臉拉', part: '肩膀', type: 'Cable', tips: '拉向額頭，大臂外旋。', iconColor: 'bg-orange-600' },
+          { id: 'bicep_curl', name: '二頭彎舉', part: '手臂', type: 'Free Weight', tips: '大臂夾緊身體兩側。', iconColor: 'bg-pink-500' },
+          { id: 'tricep_pushdown', name: '三頭下壓', part: '手臂', type: 'Cable', tips: '手肘固定。', iconColor: 'bg-fuchsia-400' },
+          { id: 'plank', name: '棒式', part: '核心', type: 'Stability', tips: '身體呈一直線。', iconColor: 'bg-emerald-500' },
+          { id: 'crunch', name: '捲腹', part: '核心', type: 'Isolation', tips: '下背貼地。', iconColor: 'bg-emerald-400' }
+        ];
+
+        // AI Logic
+        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+        const chatWithCoach = async (msg, ctx, hist, key) => {
+            if(!key) return new Promise(r=>setTimeout(()=>r("請先輸入 API Key 以啟用真實教練。"),500));
+            try {
+                const res = await fetch(`${GEMINI_API_URL}?key=${key}`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `你是一位健身教練。${ctx}\n對話:\n${hist.map(m=>m.role+':'+m.text).join('\n')}\n學員:${msg}` }] }] })
+                });
+                const d = await res.json();
+                return d.candidates?.[0]?.content?.parts?.[0]?.text || "Error";
+            } catch(e) { return "Connection Error"; }
+        };
+
+        // Components
+        const ExerciseImage = ({name, colorClass}) => (
+            <div className={`w-12 h-12 rounded-xl ${colorClass||'bg-slate-700'} flex items-center justify-center shrink-0 shadow-lg border border-white/10`}>
+                <span className="text-white font-bold text-[10px] text-center px-1 opacity-90">{name.substring(0,1)}</span>
+            </div>
+        );
+
+        const RestTimer = ({s, active, set}) => {
+            const [rem, setRem] = useState(s);
+            useEffect(() => {
+                let i=null; if(active && rem>0) i=setInterval(()=>setRem(p=>p-1),1000);
+                else if(rem===0 && active) { set(false); setRem(s); }
+                return ()=>clearInterval(i);
+            }, [active, rem]);
+            useEffect(()=>{ if(active) setRem(s); },[active, s]);
+            if(!active) return null;
+            return (
+                <div onClick={()=>set(false)} className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-800/90 backdrop-blur border border-teal-500/50 text-teal-400 px-6 py-2 rounded-full shadow-2xl z-50 flex gap-3 animate-bounce-subtle cursor-pointer">
+                    <Clock size={18} className="animate-pulse"/><span className="font-mono font-bold text-lg">{Math.floor(rem/60)}:{(rem%60).toString().padStart(2,'0')}</span>
+                </div>
+            );
+        };
+
+        const Dashboard = ({ onStart, openCoach }) => {
+            const [data, setData] = useState({nick:'健友', lv:'Lv.1', vol:0});
+            const [advice, setAdvice] = useState({text:'保持節奏', type:'neutral'});
+            const [heatmap, setHeatmap] = useState([]);
+
+            const load = () => {
+                const p = JSON.parse(localStorage.getItem('lf_profile') || '{"nickname":"健友","weeklyGoal":3}');
+                const h = JSON.parse(localStorage.getItem('lf_history') || '{}');
+                let vol = 0; const activeDates = new Set();
+                
+                Object.keys(h).forEach(k => {
+                    let done = false;
+                    h[k].forEach(ex => ex.sets.forEach(s => { if(s.completed) { vol += (s.kg*s.reps); done=true; } }));
+                    if(done) activeDates.add(k);
+                });
+
+                // Heatmap - Last 28 days
+                const hm = []; const today = new Date();
+                for(let i=27; i>=0; i--) {
+                    const d = new Date(); d.setDate(today.getDate()-i);
+                    const ds = d.toISOString().split('T')[0];
+                    hm.push({d:ds, active: activeDates.has(ds)});
+                }
+                setHeatmap(hm);
+
+                // Advice
+                let last7 = 0;
+                for(let i=0; i<7; i++) {
+                    const d = new Date(); d.setDate(today.getDate()-i);
+                    if(activeDates.has(d.toISOString().split('T')[0])) last7++;
+                }
+                const goal = p.weeklyGoal || 3;
+                let adv = {text:`本週還差 ${Math.max(0, goal-last7)} 天`, type:'encourage'};
+                if(last7 > goal+1) adv = {text:'⚠️ 注意過度訓練', type:'warning'};
+                else if(last7 >= goal-1) adv = {text:'🔥 狀態完美', type:'good'};
+                setAdvice(adv);
+
+                const lv = Math.floor(Math.sqrt(vol/1000))+1;
+                setData({nick:p.nickname, lv:`Lv.${lv}`, vol:(vol/1000).toFixed(1)});
+            };
+            
+            useEffect(() => { load(); window.addEventListener('lf_update', load); return ()=>window.removeEventListener('lf_update', load); }, []);
+
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="flex justify-between items-center">
+                         <div><h1 className="text-3xl font-black text-white">午安，{data.nick}</h1><p className="text-slate-400">{data.lv} 戰士</p></div>
+                         <button onClick={()=>openCoach(null)} className="w-12 h-12 bg-slate-800 rounded-full border border-slate-700 flex items-center justify-center relative"><User className="text-slate-200"/><div className="absolute top-0 right-0 w-3 h-3 bg-teal-500 rounded-full border-2 border-slate-900"></div></button>
+                    </div>
+                    
+                    <div onClick={onStart} className="bg-gradient-to-br from-teal-600 to-emerald-600 p-6 rounded-[2rem] text-white shadow-xl relative overflow-hidden group cursor-pointer">
+                        <div className="relative z-10">
+                            <h2 className="text-2xl font-black mb-1">開始訓練</h2>
+                            <p className="text-teal-100 font-medium text-sm mb-6">今日課表</p>
+                            <span className="bg-white text-teal-700 px-4 py-2 rounded-xl font-bold text-sm inline-flex items-center gap-1 shadow-lg group-hover:scale-105 transition">Let's Go <ChevronRight size={16}/></span>
+                        </div>
+                        <Dumbbell className="absolute right-6 bottom-6 text-teal-200/20 w-24 h-24 rotate-[-20deg]" />
+                    </div>
+
+                    <div className="bg-slate-800/50 p-5 rounded-[2rem] border border-white/5 backdrop-blur-sm">
+                        <div className="flex items-center justify-between mb-3 text-xs font-bold text-slate-400 uppercase tracking-wider"><span>訓練頻率 (28天)</span><span>{heatmap.filter(x=>x.active).length} 天</span></div>
+                        <div className="flex justify-between gap-1 h-8">{heatmap.map((v,i)=><div key={i} title={v.d} className={`flex-1 rounded-sm ${v.active?'bg-teal-500 shadow-[0_0_5px_rgba(20,184,166,0.8)]':'bg-slate-800'}`}></div>)}</div>
+                    </div>
+
+                    <div className="bg-slate-800 p-5 rounded-[2rem] border border-slate-700 flex items-center gap-4">
+                        <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center"><Zap className="text-yellow-400"/></div>
+                        <div><div className="text-sm font-bold text-white">系統建議</div><div className={`text-xs ${advice.type==='warning'?'text-orange-400':advice.type==='good'?'text-teal-400':'text-slate-400'}`}>{advice.text}</div></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ActiveWorkout = ({ onFinish, triggerTimer, openCoach }) => {
+            const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+            const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('lf_history') || '{}'));
+            const [exercises, setExercises] = useState(history[date] || []);
+            const [restTime, setRestTime] = useState(90);
+            const [showAdd, setShowAdd] = useState(false);
+            const [filter, setFilter] = useState('All');
+
+            useEffect(() => {
+                const nh = { ...history, [date]: exercises };
+                setHistory(nh); localStorage.setItem('lf_history', JSON.stringify(nh));
+                window.dispatchEvent(new Event('lf_update'));
+            }, [exercises, date]);
+
+            const changeDate = (d) => {
+                const curr = new Date(date); curr.setDate(curr.getDate() + d);
+                const nd = curr.toISOString().split('T')[0];
+                setDate(nd); setExercises(history[nd] || []);
+            }
+            const updateSet = (eid, sid, k, v) => setExercises(p => p.map(e => e.localId===eid ? {...e, sets: e.sets.map(s => s.id===sid ? {...s, [k]: Number(v)} : s)} : e));
+            const toggleSet = (eid, sid) => setExercises(p => p.map(e => e.localId===eid ? {...e, sets: e.sets.map(s => { if(s.id===sid) { if(!s.completed) triggerTimer(restTime); return {...s, completed: !s.completed}; } return s; })} : e));
+            const addSet = (eid) => setExercises(p => p.map(e => e.localId===eid ? {...e, sets: [...e.sets, {id:Date.now(), kg:0, reps:0, completed:false}]} : e));
+            const removeSet = (eid, sid) => setExercises(p => p.map(e => e.localId===eid ? {...e, sets: e.sets.filter(s => s.id !== sid)} : e));
+            const removeEx = (eid) => setExercises(p => p.filter(e => e.localId !== eid));
+            const addNew = (db) => { setExercises([...exercises, { ...db, localId:Date.now(), sets:[{id:Date.now(),kg:0,reps:0,completed:false}] }]); setShowAdd(false); };
+            const handleFinish = () => { if(confirm("🎉 訓練已記錄！\n確認返回首頁？")) onFinish(); };
+
+            return (
+                <div className="pb-24 space-y-4">
+                    <div className="sticky top-[60px] z-30 bg-slate-900/90 backdrop-blur -mx-4 px-4 py-3 flex justify-between items-center border-b border-white/5">
+                         <div className="flex bg-slate-800 rounded-xl items-center p-1 border border-white/10">
+                            <button onClick={()=>changeDate(-1)} className="p-1 text-slate-400"><ChevronLeft size={20}/></button>
+                            <input type="date" value={date} onChange={e=>{setDate(e.target.value); setExercises(history[e.target.value]||[]);}} className="bg-transparent text-white font-bold text-sm text-center outline-none min-w-[140px]" />
+                            <button onClick={()=>changeDate(1)} className="p-1 text-slate-400"><ChevronRight size={20}/></button>
+                         </div>
+                         <div className="flex items-center gap-1 bg-slate-800 px-2 py-1 rounded-xl border border-white/10">
+                            <Clock size={14} className="text-teal-400"/><input type="number" value={restTime} onChange={e=>setRestTime(Number(e.target.value))} className="w-6 bg-transparent text-right font-bold text-white text-sm outline-none"/>s
+                         </div>
+                    </div>
+                    {exercises.length === 0 && <div className="text-center py-12 border-2 border-dashed border-slate-800 rounded-[2rem]"><p className="text-slate-500 mb-4">本日無紀錄</p><button onClick={()=>setShowAdd(true)} className="px-6 py-2 bg-teal-600 rounded-xl text-white font-bold">安排動作</button></div>}
+                    {exercises.map(ex => (
+                        <div key={ex.localId} className="bg-slate-800/60 border border-white/5 rounded-[1.5rem] overflow-hidden">
+                            <div className="p-4 flex gap-4 border-b border-white/5 items-center"><ExerciseImage name={ex.name} colorClass={ex.iconColor}/><div className="flex-1 font-bold text-white">{ex.name}</div><button onClick={()=>removeEx(ex.localId)} className="p-2 text-slate-500"><X size={18}/></button></div>
+                            <div className="p-3 space-y-2">
+                                {ex.sets.map((s,i) => (
+                                    <div key={s.id} className={`flex items-center gap-2 p-2 rounded-xl ${s.completed?'bg-teal-900/20 border border-teal-500/30':'bg-slate-700/30 border border-transparent'}`}>
+                                        <button onClick={()=>removeSet(ex.localId,s.id)} className="text-slate-500"><Trash2 size={14}/></button>
+                                        <div className="w-6 text-center text-xs text-slate-500">{i+1}</div>
+                                        <input type="number" value={s.kg||''} onChange={e=>updateSet(ex.localId,s.id,'kg',e.target.value)} className="flex-1 bg-transparent text-center font-bold text-white text-lg outline-none" placeholder="KG"/>
+                                        <input type="number" value={s.reps||''} onChange={e=>updateSet(ex.localId,s.id,'reps',e.target.value)} className="flex-1 bg-transparent text-center font-bold text-white text-lg outline-none" placeholder="REPS"/>
+                                        <button onClick={()=>toggleSet(ex.localId,s.id)} className={`w-8 h-8 rounded-full flex items-center justify-center ${s.completed?'bg-teal-500 text-slate-900':'bg-slate-700 text-slate-500'}`}><Check size={16}/></button>
+                                    </div>
+                                ))}
+                                <button onClick={()=>addSet(ex.localId)} className="w-full py-2 border border-dashed border-slate-700 rounded-xl text-xs text-slate-400">加組</button>
+                            </div>
+                        </div>
+                    ))}
+                    {exercises.length > 0 && <button onClick={()=>setShowAdd(true)} className="w-full py-4 border-2 border-dashed border-slate-800 rounded-[2rem] text-slate-400 font-bold">新增動作</button>}
+                    {exercises.length > 0 && <button onClick={handleFinish} className="w-full py-4 bg-slate-200 text-slate-900 rounded-2xl font-black text-lg shadow-xl mt-8">完成訓練</button>}
+                    {showAdd && (
+                        <div className="fixed inset-0 z-50 bg-black/80 flex items-end p-4">
+                            <div className="bg-slate-900 w-full h-[80vh] rounded-[2rem] p-5 border border-slate-700 flex flex-col">
+                                <div className="flex justify-between mb-4"><h3 className="text-white font-bold">動作庫</h3><button onClick={()=>setShowAdd(false)}><X size={20} className="text-slate-400"/></button></div>
+                                <div className="flex gap-2 overflow-x-auto mb-4">{['All','胸部','背部','腿部','肩膀','手臂','核心'].map(f=><button key={f} onClick={()=>setFilter(f)} className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap border ${filter===f?'bg-teal-600 border-teal-500 text-white':'border-slate-700 text-slate-400'}`}>{f}</button>)}</div>
+                                <div className="flex-1 overflow-y-auto space-y-2">{(filter==='All'?EXERCISE_DB:EXERCISE_DB.filter(e=>e.part===filter)).map(d=><button key={d.id} onClick={()=>addNew(d)} className="w-full p-3 bg-slate-800 rounded-xl flex items-center gap-3 text-left"><div className={`w-8 h-8 rounded-lg ${d.iconColor} flex items-center justify-center text-[10px]`}>{d.name[0]}</div><div className="text-slate-200 text-sm font-bold">{d.name}</div></button>)}</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [tab, setTab] = useState('home');
+            const [timer, setTimer] = useState({s:90, active:false});
+            const [coach, setCoach] = useState({open:false, ctx:null, img:null});
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-slate-950 text-white relative shadow-2xl overflow-hidden">
+                    <div className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md px-6 py-4 flex justify-between items-center border-b border-white/5">
+                        <div className="flex items-center gap-2"><div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-xl rotate-3 flex items-center justify-center text-slate-900 shadow-lg"><Zap size={20} fill="currentColor"/></div><span className="font-black text-xl tracking-tight">LiftFlow <span className="text-teal-500 text-xs align-top">PRO</span></span></div>
+                        {tab!=='home' && <button onClick={()=>setCoach({open:true,ctx:null,img:null})} className="text-xs font-bold text-teal-400 bg-teal-900/30 px-3 py-1.5 rounded-full border border-teal-500/30 flex items-center gap-1"><MessageSquare size={12}/> 教練</button>}
+                    </div>
+                    <main className="p-6">
+                        {tab==='home' && <Dashboard onStart={()=>setTab('workout')} openCoach={(ctx,img)=>setCoach({open:true,ctx,img})}/>}
+                        {tab==='workout' && <ActiveWorkout onFinish={()=>setTab('home')} triggerTimer={s=>setTimer({s,active:true})} openCoach={(ctx)=>setCoach({open:true,ctx,img:null})}/>}
+                        {tab==='profile' && <div className="text-center py-20 text-slate-500">Profile Component (Full code in React version)</div>}
+                    </main>
+                    <RestTimer s={timer.s} active={timer.active} set={v=>setTimer(p=>({...p,active:v}))} />
+                    <div className="fixed bottom-0 left-0 w-full bg-slate-950/90 backdrop-blur-xl border-t border-white/5 pb-safe pt-2 z-40">
+                        <div className="max-w-md mx-auto flex justify-around items-center px-2">
+                            {[{id:'home',i:BarChart3,l:'總覽'},{id:'workout',i:Dumbbell,l:'日誌'},{id:'profile',i:User,l:'我的'}].map(t => (
+                                <button key={t.id} onClick={()=>setTab(t.id)} className={`flex flex-col items-center p-3 rounded-2xl transition w-16 ${tab===t.id?'text-teal-400':'text-slate-500'}`}><t.i size={24}/><span className="text-[10px] font-bold mt-1">{t.l}</span></button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "讓我們健一面 PRO",
+  "description": "專業健身記錄與 AI 教練助手，提供科學化訓練建議。",
+  "themeColor": "#020617",
+  "backgroundColor": "#020617",
+  "display": "standalone",
+  "orientation": "portrait",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
