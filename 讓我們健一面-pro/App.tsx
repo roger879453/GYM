@@ -17,7 +17,9 @@ import {
   AlertTriangle,
   Github,
   Upload,
-  Terminal
+  Terminal,
+  FileCode,
+  PlayCircle
 } from 'lucide-react';
 import { Dashboard } from './components/Dashboard';
 import { ActiveWorkout } from './components/ActiveWorkout';
@@ -196,7 +198,7 @@ const App: React.FC = () => {
                   <div className="flex p-1 bg-slate-950 rounded-xl mb-4 shrink-0">
                       {[
                         {id:'link', label:'連結', icon:Globe},
-                        {id:'deploy', label:'部署', icon:Github},
+                        {id:'deploy', label:'GitHub部署', icon:Github},
                         {id:'ios', label:'iOS', icon:Share2},
                         {id:'android', label:'Android', icon:Download},
                         {id:'settings', label:'設定', icon:Settings}
@@ -234,7 +236,7 @@ const App: React.FC = () => {
                                     <Zap size={14}/> 404 問題已修復？
                                 </h4>
                                 <p className="text-xs text-indigo-200/80 leading-relaxed">
-                                    請務必確認您已在編輯器左側的「Source Control」進行了 Commit 與 Push，Netlify 才能收到最新的修復檔。
+                                    我剛剛補上了 GitHub Actions 設定檔。請務必再次 <strong>Push</strong> 到 GitHub，然後依照「GitHub部署」分頁進行設定。
                                 </p>
                             </div>
                          </div>
@@ -243,28 +245,41 @@ const App: React.FC = () => {
                      {installTab === 'deploy' && (
                          <div className="space-y-4 text-sm text-slate-300">
                              <h4 className="font-bold text-white flex items-center gap-2">
-                                 <AlertTriangle size={16} className="text-red-400"/> 解決 GitHub 404 (推薦)
+                                 <Github size={16} className="text-white"/> GitHub Pages 設定教學
                              </h4>
                              <p className="text-xs text-slate-400">
-                                 GitHub 404 代表程式碼還沒「上傳」成功。請執行：
+                                 我已經幫您寫好了自動化腳本。請依照以下步驟開啟它：
                              </p>
-                             <ol className="list-decimal list-inside space-y-2 text-xs bg-slate-800 p-3 rounded-xl border border-slate-700">
-                                 <li>點擊左側 <strong>Source Control</strong> (樹狀圖圖示)。</li>
-                                 <li>在輸入框打字 (如 "fix")，按 <strong>Commit</strong>。</li>
-                                 <li>點擊 <strong>Publish / Sync</strong> 按鈕。</li>
-                                 <li>等待轉圈圈結束，GitHub 頁面就會正常顯示了！</li>
-                             </ol>
-
-                             <h4 className="font-bold text-white mt-4 flex items-center gap-2">
-                                 <Terminal size={16} className="text-teal-400"/> 方法 B：手動指令
-                             </h4>
-                             <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs font-mono text-slate-400">
-                                 <p className="mb-2 text-yellow-500">// 注意：這需要在您的電腦安裝 Node.js</p>
-                                 <p>1. 下載專案並解壓縮</p>
-                                 <p>2. 打開終端機 (Terminal)</p>
-                                 <p>3. 輸入 <span className="text-teal-400">npm install</span></p>
-                                 <p>4. 輸入 <span className="text-teal-400">npm run build</span></p>
-                                 <p>5. 上傳 dist 資料夾</p>
+                             
+                             <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 space-y-3">
+                                 <div className="flex gap-3">
+                                     <div className="w-6 h-6 rounded-full bg-teal-900 text-teal-400 flex items-center justify-center text-xs font-bold shrink-0">1</div>
+                                     <div>
+                                         <p className="font-bold text-white text-xs">Push 程式碼</p>
+                                         <p className="text-[10px] text-slate-400">請先在左側 Source Control 提交並同步這次的更新。</p>
+                                     </div>
+                                 </div>
+                                 <div className="flex gap-3">
+                                     <div className="w-6 h-6 rounded-full bg-teal-900 text-teal-400 flex items-center justify-center text-xs font-bold shrink-0">2</div>
+                                     <div>
+                                         <p className="font-bold text-white text-xs">前往 Repository Settings</p>
+                                         <p className="text-[10px] text-slate-400">打開 GitHub 專案頁面，點擊上方的 <strong>Settings</strong>。</p>
+                                     </div>
+                                 </div>
+                                 <div className="flex gap-3">
+                                     <div className="w-6 h-6 rounded-full bg-teal-900 text-teal-400 flex items-center justify-center text-xs font-bold shrink-0">3</div>
+                                     <div>
+                                         <p className="font-bold text-white text-xs">設定 Pages Source</p>
+                                         <p className="text-[10px] text-slate-400">左側選單點擊 <strong>Pages</strong>。在 "Build and deployment" 下的 Source，選擇 <strong>GitHub Actions</strong>。</p>
+                                     </div>
+                                 </div>
+                                 <div className="flex gap-3">
+                                     <div className="w-6 h-6 rounded-full bg-teal-900 text-teal-400 flex items-center justify-center text-xs font-bold shrink-0">4</div>
+                                     <div>
+                                         <p className="font-bold text-white text-xs">等待變綠燈</p>
+                                         <p className="text-[10px] text-slate-400">去 <strong>Actions</strong> 分頁查看，等待 "Deploy to GitHub Pages" 變成綠色勾勾 ✅。</p>
+                                     </div>
+                                 </div>
                              </div>
                          </div>
                      )}
@@ -290,23 +305,16 @@ const App: React.FC = () => {
                      {installTab === 'settings' && (
                          <div className="space-y-4 text-xs text-slate-300 leading-relaxed">
                              <div className="bg-teal-500/10 border border-teal-500/30 p-3 rounded-xl mb-2">
-                                 <h4 className="font-bold text-teal-400 mb-1 flex items-center gap-1"><Check size={12}/> 設定檔已就緒</h4>
-                                 <p><code>netlify.toml</code> 已經自動產生。這是解決 404 的關鍵。</p>
+                                 <h4 className="font-bold text-teal-400 mb-1 flex items-center gap-1"><PlayCircle size={12}/> GitHub Actions 已就緒</h4>
+                                 <p><code>deploy.yml</code> 已經建立。這是自動部署的關鍵。</p>
                              </div>
 
-                             <h4 className="font-bold text-white mt-4 border-b border-white/10 pb-1">Netlify 重新部署：</h4>
+                             <h4 className="font-bold text-white mt-4 border-b border-white/10 pb-1">如何讓 404 消失：</h4>
                              <ol className="list-decimal list-inside space-y-1 text-slate-400">
-                                 <li>如果您用 GitHub：請回到編輯器再次執行 <strong>Push/Sync</strong>。</li>
-                                 <li>如果您手動上傳：請重新打包 <code>npm run build</code> 並上傳。</li>
-                             </ol>
-
-                             <h4 className="font-bold text-white mt-4 border-b border-white/10 pb-1">設定 AI Key (Netlify)：</h4>
-                             <ol className="list-decimal list-inside space-y-1 text-slate-400">
-                                 <li>前往 Netlify &gt; Site configuration。</li>
-                                 <li>點擊 <strong>Environment variables</strong> &gt; Add a variable。</li>
-                                 <li>Key 輸入 <code>API_KEY</code>。</li>
-                                 <li>Value 貼上您的 Gemini Key。</li>
-                                 <li>回到 Deploys &gt; Trigger deploy &gt; Clear cache and deploy。</li>
+                                 <li>回到編輯器左側 <strong>Source Control</strong>。</li>
+                                 <li>輸入 Commit 訊息 (如 "add actions") 並點擊 <strong>Sync</strong>。</li>
+                                 <li>去 GitHub > Settings > Pages，將 Source 改為 <strong>GitHub Actions</strong>。</li>
+                                 <li>這一步非常重要！改完後 GitHub 才會開始執行我們寫好的腳本。</li>
                              </ol>
                          </div>
                      )}
